@@ -11,7 +11,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # CONFIG
 # ==========================
 
-BOT_TOKEN = os.environ.get(8783548415:AAGKEbrcrvhnN-Ma4_AuECcCyO_yKLpgut0")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = "556401310"
 
 if not BOT_TOKEN:
