@@ -4,14 +4,19 @@ import os
 import hashlib
 import urllib3
 
+# Disable SSL warnings (safe for cloud runner)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ==========================
 # CONFIG
 # ==========================
 
-BOT_TOKEN = "8783548415:AAGKEbrcrvhnN-Ma4_AuECcCyO_yKLpgut0"
+BOT_TOKEN = os.environ.get(8783548415:AAGKEbrcrvhnN-Ma4_AuECcCyO_yKLpgut0")
 CHAT_ID = "556401310"
+
+if not BOT_TOKEN:
+    print("BOT_TOKEN not found! Exiting.")
+    exit()
 
 strict_keywords = [
     "trainee eto",
@@ -20,11 +25,9 @@ strict_keywords = [
 
 # ==========================
 # TARGETED CAREER PAGES
-# (Focused serious employers)
 # ==========================
 
 career_pages = {
-    # Ship Management
     "Anglo Eastern": "https://www.angloeastern.com/careers/",
     "V.Group": "https://www.vships.com/careers/",
     "Synergy Marine": "https://synergymarinegroup.com/careers/",
@@ -32,15 +35,11 @@ career_pages = {
     "Bernhard Schulte (BSM)": "https://www.bs-shipmanagement.com/careers/",
     "Thome Group": "https://www.thome.com/careers/",
     "OSM Thome": "https://www.osmthome.com/careers/",
-
-    # Offshore
     "Tidewater": "https://www.tdw.com/careers/",
     "Bourbon Offshore": "https://www.bourbonoffshore.com/careers/",
     "DOF": "https://www.dof.com/careers/",
     "Seadrill": "https://www.seadrill.com/careers/",
     "Subsea7": "https://careers.subsea7.com/",
-
-    # Indian Employers
     "Great Eastern Shipping": "https://www.greatship.com/careers/",
     "Shipping Corporation of India": "https://www.shipindia.com/careers",
     "Seven Islands Shipping": "https://www.sevenislands.co.in/careers/"
@@ -69,7 +68,6 @@ for company, url in career_pages.items():
         response = requests.get(url, timeout=15, verify=False)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Extract only link texts (likely job titles)
         links = soup.find_all("a")
 
         for link in links:
@@ -78,7 +76,6 @@ for company, url in career_pages.items():
             if not text:
                 continue
 
-            # STRICT MATCH
             if any(keyword in text for keyword in strict_keywords):
 
                 job_url = link.get("href")
@@ -98,25 +95,27 @@ for company, url in career_pages.items():
         print(f"Error checking {company}: {e}")
 
 # ==========================
-# SEND ALERT
+# SEND TELEGRAM MESSAGE DAILY
 # ==========================
+
+telegram_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
 if new_results:
     message = "🔥 TRAINEE ETO / ETO CADET VACANCIES FOUND:\n\n" + "\n".join(new_results[:5])
 
-    telegram_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
-    data = {
-        "chat_id": CHAT_ID,
-        "text": message
-    }
-
-    requests.post(telegram_url, data=data)
-
+    # Update memory only if vacancy found
     with open(history_file, "w") as f:
         for h in sent_hashes:
             f.write(h + "\n")
-
-    print("Trainee ETO vacancy alert sent.")
 else:
-    print("No Trainee ETO / ETO Cadet vacancies detected.")
+    message = "📭 No Message for the day Bud."
+
+data = {
+    "chat_id": CHAT_ID,
+    "text": message
+}
+
+response = requests.post(telegram_url, data=data)
+
+print("Daily status message sent.")
+print("Telegram response:", response.text)
